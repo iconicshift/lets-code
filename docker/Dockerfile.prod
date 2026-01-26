@@ -1,0 +1,28 @@
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
+
+FROM base AS deps
+COPY package.json pnpm-lock.yaml /app/
+COPY patches /app/patches
+WORKDIR /app
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+FROM base AS build
+COPY . /app/
+COPY --from=deps /app/node_modules /app/node_modules
+WORKDIR /app
+RUN pnpm run build
+
+FROM base AS production-deps
+COPY package.json pnpm-lock.yaml /app/
+COPY patches /app/patches
+WORKDIR /app
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
+
+FROM base
+COPY package.json pnpm-lock.yaml server.js drizzle.config.ts /app/
+COPY --from=production-deps /app/node_modules /app/node_modules
+COPY --from=build /app/build /app/build
+COPY drizzle /app/drizzle
+WORKDIR /app
+CMD ["pnpm", "run", "start"]

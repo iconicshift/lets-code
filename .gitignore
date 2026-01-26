@@ -1,0 +1,15 @@
+*.tsbuildinfo
+/.claude/agents/
+/.claude/commands/
+/.claude/settings.json
+/.devenv
+/.devenv.flake.nix
+/.direnv
+/.mcp.json
+/.pnpm-store/
+/.react-router/
+/build/
+/debug-storybook.log
+/node_modules/
+/playwright-report/
+/test-results/

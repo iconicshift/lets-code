@@ -1,0 +1,29 @@
+diff --git a/dist/vite.js b/dist/vite.js
+index b5bf311f7f7965fa2a88d32d218f03eb6025dc00..7b47ece6ace7e6c3c86b005759957503ea1aa4ca 100644
+--- a/dist/vite.js
++++ b/dist/vite.js
+@@ -641,7 +641,12 @@ async function createConfigLoader({
+       if (!fsWatcher) {
+         fsWatcher = import_chokidar.default.watch([root, appDirectory], {
+           ignoreInitial: true,
++          followSymlinks: false,
+           ignored: (path9) => {
++            // Ignore directories that cause CPU issues in Nix/devenv environments
++            if (/(^|[\/\\])(\.devenv|\.direnv|\.git|node_modules)[\/\\]/.test(path9)) {
++              return true;
++            }
+             let dirname4 = import_pathe3.default.dirname(path9);
+             return !dirname4.startsWith(appDirectory) && // Ensure we're only watching files outside of the app directory
+             // that are at the root level, not nested in subdirectories
+@@ -3408,7 +3413,10 @@ var reactRouterVitePlugin = () => {
+           cacheDir: "node_modules/.vite-child-compiler",
+           mode: viteConfig.mode,
+           server: {
+-            watch: viteConfig.command === "build" ? null : void 0,
++            watch: viteConfig.command === "build" ? null : {
++              ignored: ['**/.devenv/**', '**/.direnv/**', '**/.git/**', '**/node_modules/**'],
++              followSymlinks: false
++            },
+             preTransformRequests: false,
+             hmr: false
+           },

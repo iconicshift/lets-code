@@ -1,0 +1,5 @@
+packages:
+  - "."
+
+patchedDependencies:
+  "@react-router/dev": patches/@react-router__dev.patch
