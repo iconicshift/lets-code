@@ -17,6 +17,17 @@ services:
       timeout: 5s
       retries: 5
 
+  # Install dependencies with a single writer to avoid write conflicts on the
+  # shared node_modules volume.
+  setup:
+    image: node:22
+    container_name: app-setup
+    working_dir: /app
+    volumes:
+      - ..:/app
+      - node_modules:/app/node_modules
+    command: sh -c "corepack enable && pnpm install"
+
   app:
     image: node:22
     container_name: app-app
@@ -33,10 +44,12 @@ services:
     volumes:
       - ..:/app
       - node_modules:/app/node_modules
-    command: sh -c "corepack enable && pnpm install && node server.js"
+    command: sh -c "corepack enable && node server.js"
     depends_on:
       postgres:
         condition: service_healthy
+      setup:
+        condition: service_completed_successfully
 
   storybook:
     image: node:22
@@ -50,9 +63,10 @@ services:
     volumes:
       - ..:/app
       - node_modules:/app/node_modules
-    command: sh -c "corepack enable && pnpm install && pnpm exec storybook dev -p 6006 --no-open"
+    command: sh -c "corepack enable && pnpm exec storybook dev -p 6006 --no-open"
     depends_on:
-      - app
+      setup:
+        condition: service_completed_successfully
 
 volumes:
   postgres-data:
