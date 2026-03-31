@@ -5,6 +5,10 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "start": "node server.js",
+    "check": "react-router typegen && tsc -b",
+    "test": "vitest run && playwright test --reporter=list",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test --reporter=list",
     "migrate": "drizzle-kit migrate --config drizzle.config.ts",
     "build": "react-router build"
   },

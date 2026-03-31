@@ -1,5 +1,5 @@
 _default:
-    @just check test
+    just docker run --rm test
 
 # ------------------------------------------------------------------------------
 # Development
@@ -7,21 +7,22 @@ _default:
 # Prepare local development environment
 [group('dev')]
 setup:
+    just docker up -d postgres
     pnpm install
     @just db-migrate
     pnpm exec playwright install chromium
     @echo
     @echo "🚀 Happy hacking!"
 
-# Run the node server
-[group('dev')]
-serve:
-    node server.js
-
 # Start development environment using Docker Compose
 [group('dev')]
 dev:
-    docker compose -f docker/compose.yml up
+    just docker up
+
+# Run the node server on the host
+[group('dev')]
+serve:
+    node server.js
 
 # Format project source files
 [group('dev')]
@@ -39,8 +40,7 @@ lint:
 # Type check source files
 [group('release')]
 check:
-    react-router typegen
-    tsc -b
+    pnpm run check
 
 # Start the app in production mode
 [group('release')]
@@ -53,23 +53,7 @@ start:
 # Run project test suite
 [group('test')]
 test:
-    pnpm exec vitest run
-    @just _check-e2e-port
-    pnpm exec playwright test --reporter=list
-
-# Check E2E port is available
-[no-exit-message]
-[private]
-_check-e2e-port:
-    #!/usr/bin/env zsh
-    port="${E2E_PORT:-3001}"
-    if pid=$(lsof -ti ":$port" -sTCP:LISTEN 2>/dev/null); then
-        cmd=$(ps -p "$pid" -o comm= 2>/dev/null)
-        echo >&2
-        echo >&2 "{{ RED }}{{ BOLD }}Error:{{ NORMAL }}{{ BOLD }} Port $port required for e2e tests but in use by \`$cmd\` (PID $pid).{{ NORMAL }}"
-        echo >&2
-        exit 1
-    fi
+    pnpm test
 
 # ------------------------------------------------------------------------------
 # Database
@@ -77,7 +61,7 @@ _check-e2e-port:
 # Start an interactive psql session
 [group('db')]
 psql:
-    psql "$DATABASE_URL"
+    just docker exec postgres psql -U app app_dev
 
 # Generate migration files from Typescript definitions
 [group('db')]
@@ -93,15 +77,12 @@ db-migrate *args:
 [group('db')]
 db-reset:
     #!/usr/bin/env zsh
-    dir=".devenv/state/postgres"
-    [[ ! -d "$dir" ]] && exit
-
-    echo -n "{{ BOLD }}Are you sure you want to delete {{ YELLOW }}${dir}{{ NORMAL }}{{ BOLD }}? (y/N): {{ NORMAL }}"
+    echo -n "{{ BOLD }}Delete PostgreSQL data? (y/N): {{ NORMAL }}"
     read response
 
     if [[ "$response" =~ ^[Yy]$ ]]; then
-        rm -r .devenv/state/postgres/
-        echo >&2 "🔥 PostgreSQL state deleted."
+        just docker rm -sf postgres
+        docker volume rm lets-code_postgres-data 2>/dev/null
     fi
 
 # ------------------------------------------------------------------------------
