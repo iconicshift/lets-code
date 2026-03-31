@@ -5,19 +5,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Tasks
 
 ```sh
-devenv up              # Start everything (runs setup, then PostgreSQL, dev server, Storybook)
-just                   # Run check and test (default)
-just dev               # Start Express server on port 3000
-just check             # TypeScript type checking
-just test              # Run vitest unit tests + Playwright e2e tests
+just dev               # Start Docker Compose (PostgreSQL, dev server, Storybook)
+just                   # Run check and test in a container (default)
+just check             # TypeScript type checking in a container
+just test              # Run vitest + Playwright e2e tests in a container
 just fmt               # Format code with treefmt
-just storybook         # Run Storybook on port 6006
 just psql              # Connect to development database
-just db-migration      # Generate Drizzle migrations
+just db-generate       # Generate Drizzle migrations
 just db-migrate        # Run Drizzle migrations
 ```
 
-**Note:** `just test` runs both unit tests (vitest) and e2e tests (Playwright). Do not run vitest separately before `just test` or you will run unit tests twice.
+`just` uses Docker Compose for everything. devenv is optional — it provides
+packages and env vars only (no processes).
+
+Host-native users can skip Just and Docker and use pnpm directly:
+
+```sh
+pnpm run check         # TypeScript type checking
+pnpm test              # Run vitest + Playwright
+pnpm run test:unit     # Run vitest only
+pnpm run test:e2e      # Run Playwright only
+```
 
 ## Architecture
 
@@ -47,7 +55,7 @@ React Router 7 full-stack application with Express.js backend and PostgreSQL dat
 - React 19, React Router 7, TypeScript, Tailwind CSS 4
 - Express 5, Drizzle ORM, PostgreSQL 17 (with pgvector, PostGIS)
 - Playwright for e2e tests, Storybook for component development
-- pnpm for packages, devenv/Nix for development environment
+- Docker Compose for development, pnpm for packages, devenv/Nix optional
 
 ## Testing
 
